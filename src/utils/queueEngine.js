@@ -287,8 +287,9 @@ export const getQueuePosition = (tokenId, state) => {
 export const findActiveCustomerByPhone = (phone, state) => {
   if (!phone) return null;
   const activeStatuses = ['Waiting', 'Called', 'In Chair'];
+  const clean = phone.replace(/\D/g, '').slice(-10);
   return (state.queue || []).find(
-    c => c.phone.replace(/\D/g, '') === phone.replace(/\D/g, '') && activeStatuses.includes(c.status)
+    c => c.phone.replace(/\D/g, '').slice(-10) === clean && activeStatuses.includes(c.status)
   );
 };
 
@@ -319,6 +320,9 @@ export const joinQueue = ({ name, phone, serviceIds, preferredBarber = 'Any' }) 
   // Check duplicate active phone
   const existing = findActiveCustomerByPhone(cleanPhone, state);
   if (existing) {
+    try {
+      localStorage.setItem('salon_active_token', existing.id);
+    } catch (e) {}
     return { isDuplicate: true, customer: existing };
   }
 
@@ -346,6 +350,9 @@ export const joinQueue = ({ name, phone, serviceIds, preferredBarber = 'Any' }) 
   };
 
   saveQueueState(updatedState);
+  try {
+    localStorage.setItem('salon_active_token', newTokenId);
+  } catch (e) {}
   return { isDuplicate: false, customer: newCustomer };
 };
 
@@ -486,6 +493,11 @@ export const completeService = (tokenId) => {
   };
 
   saveQueueState(updatedState);
+  try {
+    if (localStorage.getItem('salon_active_token') === tokenId) {
+      localStorage.removeItem('salon_active_token');
+    }
+  } catch (e) {}
   return true;
 };
 
@@ -518,6 +530,11 @@ export const cancelSpot = (tokenId) => {
   };
 
   saveQueueState(updatedState);
+  try {
+    if (localStorage.getItem('salon_active_token') === tokenId) {
+      localStorage.removeItem('salon_active_token');
+    }
+  } catch (e) {}
   return true;
 };
 
@@ -563,6 +580,11 @@ export const markNoShow = (tokenId) => {
   };
 
   saveQueueState(updatedState);
+  try {
+    if (localStorage.getItem('salon_active_token') === tokenId) {
+      localStorage.removeItem('salon_active_token');
+    }
+  } catch (e) {}
   return true;
 };
 

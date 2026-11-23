@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useQueue } from '../context/QueueContext';
 import { Card, GoldBadge } from '../components/Card';
-import { Clock, User, Scissors, AlertTriangle, CheckCircle, Ban, Bell, Sparkles } from 'lucide-react';
+import {
+  Clock,
+  User,
+  Scissors,
+  AlertTriangle,
+  CheckCircle,
+  Ban,
+  Bell,
+  Sparkles,
+  Phone,
+  ArrowRight,
+  ShieldAlert,
+} from 'lucide-react';
 
 export const StatusScreen = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { t, lang } = useLanguage();
   const {
     queueState,
@@ -16,7 +27,7 @@ export const StatusScreen = () => {
     cancelSpot,
   } = useQueue();
 
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const customer = (queueState.queue || []).find((c) => c.id === id);
   const positionInfo = customer ? getQueuePosition(customer.id) : null;
@@ -25,22 +36,22 @@ export const StatusScreen = () => {
   if (!customer) {
     return (
       <div className="max-w-md mx-auto px-4 py-12 text-center space-y-4">
-        <div className="bg-[#243042] border border-gray-700 rounded-xl p-6">
+        <div className="bg-[#243042] border border-gray-700 rounded-xl p-6 shadow-xl">
           <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
           <h2 className="text-lg font-bold text-white mb-2">{t('statusNotFound')}</h2>
           <p className="text-xs text-gray-400 mb-4">
             Token "{id}" was not found in the active or recent queue.
           </p>
-          <div className="text-left bg-[#1F2937] p-3 rounded-lg border border-gray-700/60 mb-4">
-            <span className="text-xs text-gray-400 block mb-2 font-medium">
-              Try viewing one of the pre-seeded demo tokens:
+          <div className="text-left bg-[#1F2937] p-3 rounded-lg border border-gray-700/60 mb-5">
+            <span className="text-xs text-gray-300 block mb-2 font-medium">
+              {t('statusTrySampleTokens')}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {(queueState.queue || []).map((c) => (
                 <Link
                   key={c.id}
                   to={`/status/${c.id}`}
-                  className="px-2 py-1 rounded-md text-xs font-semibold bg-gray-800 hover:bg-[#D4A017] hover:text-gray-950 border border-gray-700 transition"
+                  className="px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-800 hover:bg-[#D4A017] hover:text-gray-950 border border-gray-700 transition"
                 >
                   {c.id} ({c.status})
                 </Link>
@@ -49,9 +60,10 @@ export const StatusScreen = () => {
           </div>
           <Link
             to="/join"
-            className="inline-block px-4 py-2 rounded-xl text-xs font-bold bg-[#D4A017] text-gray-950 hover:bg-[#B8860B] transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#D4A017] text-gray-950 hover:bg-[#B8860B] transition"
           >
-            {t('navJoin')}
+            <span>{t('statusBackToJoin')}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
@@ -62,10 +74,10 @@ export const StatusScreen = () => {
     (customer.serviceIds || []).includes(s.id)
   );
 
-  const handleCancel = () => {
+  const handleConfirmCancel = () => {
     try {
       cancelSpot(customer.id);
-      setConfirmCancel(false);
+      setShowCancelModal(false);
     } catch (err) {
       alert(err.message);
     }
@@ -91,42 +103,56 @@ export const StatusScreen = () => {
         </h1>
       </div>
 
-      {/* Dynamic Status Alert Banners */}
+      {/* 1. High-Visibility Gold Alert when CALLED */}
       {isCalled && (
-        <div className="bg-[#D4A017] text-gray-950 p-4 rounded-xl shadow-gold-md animate-pulse-gold flex items-center gap-3">
-          <Bell className="w-6 h-6 shrink-0 fill-current" />
+        <div className="bg-[#D4A017] text-gray-950 p-5 rounded-xl shadow-gold-md animate-pulse-gold flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-gray-950 text-[#D4A017] flex items-center justify-center shrink-0 mt-0.5">
+            <Bell className="w-5 h-5 fill-current" />
+          </div>
           <div>
-            <p className="font-extrabold text-sm sm:text-base">
-              {t('statusAlertCalled', { barber: customer.assignedBarber || 'your barber' })}
+            <span className="text-[11px] font-black uppercase tracking-wider text-gray-900 block">
+              {t('statusCalledHeading')}
+            </span>
+            <p className="font-extrabold text-base sm:text-lg text-gray-950 leading-snug mt-0.5">
+              {t('statusAlertCalled', {
+                barber: customer.assignedBarber || 'your barber',
+              })}
             </p>
-            <p className="text-xs font-medium text-gray-900 mt-0.5">
-              Please enter the salon floor immediately.
+            <p className="text-xs font-semibold text-gray-900/90 mt-1">
+              {t('statusAlertCalledDesc')}
             </p>
           </div>
         </div>
       )}
 
+      {/* 2. Amber Alert when 2nd in Line */}
       {isSecondInLine && (
-        <div className="bg-amber-500/20 border border-amber-500 text-amber-200 p-4 rounded-xl flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+        <div className="bg-amber-500/20 border-2 border-amber-500 text-amber-200 p-4 rounded-xl flex items-start gap-3 shadow-lg">
+          <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-sm">{t('statusAlertSecondInLine')}</p>
-            <p className="text-xs text-amber-300/80 mt-0.5">
-              Your turn is approaching shortly. Please ensure you are nearby.
+            <p className="font-bold text-sm text-white">
+              {t('statusAlertSecondInLine')}
+            </p>
+            <p className="text-xs text-amber-300/90 mt-0.5">
+              {t('statusAlertSecondInLineDesc')}
             </p>
           </div>
         </div>
       )}
 
+      {/* 3. In Chair Status */}
       {isInChair && (
         <div className="bg-emerald-950/80 border border-emerald-600 text-emerald-200 p-4 rounded-xl flex items-center gap-3">
           <Scissors className="w-5 h-5 text-emerald-400 shrink-0" />
           <p className="font-bold text-sm">
-            {t('statusAlertInChair', { barber: customer.assignedBarber || 'Barber' })}
+            {t('statusAlertInChair', {
+              barber: customer.assignedBarber || 'your barber',
+            })}
           </p>
         </div>
       )}
 
+      {/* 4. Service Done */}
       {isDone && (
         <div className="bg-blue-950/80 border border-blue-600 text-blue-200 p-4 rounded-xl flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-blue-400 shrink-0" />
@@ -134,6 +160,7 @@ export const StatusScreen = () => {
         </div>
       )}
 
+      {/* 5. Cancelled */}
       {isCancelled && (
         <div className="bg-rose-950/80 border border-rose-600 text-rose-200 p-4 rounded-xl flex items-center gap-3">
           <Ban className="w-5 h-5 text-rose-400 shrink-0" />
@@ -141,6 +168,7 @@ export const StatusScreen = () => {
         </div>
       )}
 
+      {/* 6. No-Show */}
       {isNoShow && (
         <div className="bg-gray-800 border border-gray-600 text-gray-300 p-4 rounded-xl flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
@@ -189,19 +217,21 @@ export const StatusScreen = () => {
               <span className="text-xs text-gray-400 block mb-0.5">
                 {t('statusPositionLabel')}
               </span>
-              <span className="text-2xl font-extrabold text-white">
+              <span className="text-2xl sm:text-3xl font-extrabold text-white">
                 {positionInfo?.positionText || '1st'}
               </span>
-              <span className="text-[10px] text-gray-400 block mt-0.5">in queue</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">
+                {t('statusPositionText', { pos: positionInfo?.positionText || '1st' })}
+              </span>
             </div>
             <div className="bg-[#1F2937] p-3.5 rounded-xl border border-gray-700/50 text-center">
               <span className="text-xs text-gray-400 block mb-0.5">
                 {t('statusEstWaitLabel')}
               </span>
-              <span className="text-2xl font-extrabold text-[#D4A017]">
-                ~{estWait} {t('mins')}
+              <span className="text-2xl sm:text-3xl font-extrabold text-[#D4A017]">
+                ~{estWait}
               </span>
-              <span className="text-[10px] text-gray-400 block mt-0.5">live updated</span>
+              <span className="text-[10px] text-gray-400 block mt-0.5">{t('mins')}</span>
             </div>
           </div>
         )}
@@ -211,9 +241,17 @@ export const StatusScreen = () => {
           <div className="flex items-center justify-between pb-2 border-b border-gray-700/60">
             <span className="text-gray-400 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#D4A017]" />
-              Customer
+              {t('statusCustomerLabel')}
             </span>
             <span className="text-white font-bold">{customer.name}</span>
+          </div>
+
+          <div className="flex items-center justify-between pb-2 border-b border-gray-700/60">
+            <span className="text-gray-400 flex items-center gap-1.5">
+              <Phone className="w-3.5 h-3.5 text-[#D4A017]" />
+              {t('statusPhoneLabel')}
+            </span>
+            <span className="text-white font-mono">{customer.phone}</span>
           </div>
 
           <div className="flex items-center justify-between pb-2 border-b border-gray-700/60">
@@ -224,7 +262,9 @@ export const StatusScreen = () => {
             <span className="text-white font-bold">
               {customer.assignedBarber
                 ? `${customer.assignedBarber} (Assigned)`
-                : customer.preferredBarber || 'Any'}
+                : customer.preferredBarber === 'Any'
+                ? t('anyBarberShort')
+                : customer.preferredBarber}
             </span>
           </div>
 
@@ -249,37 +289,58 @@ export const StatusScreen = () => {
         {/* Cancel Button (Only if still Waiting) */}
         {customer.status === 'Waiting' && (
           <div>
-            {!confirmCancel ? (
-              <button
-                onClick={() => setConfirmCancel(true)}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-300 hover:text-white bg-rose-950/30 hover:bg-rose-950/70 border border-rose-900/60 transition"
-              >
-                {t('statusCancelBtn')}
-              </button>
-            ) : (
-              <div className="bg-rose-950/60 border border-rose-800 p-3 rounded-xl space-y-2 text-center">
-                <p className="text-xs text-rose-200 font-medium">
-                  {t('statusCancelConfirm')}
-                </p>
-                <div className="flex justify-center gap-2">
-                  <button
-                    onClick={() => setConfirmCancel(false)}
-                    className="px-3 py-1 rounded-lg text-xs bg-gray-800 text-gray-300 hover:bg-gray-700 transition"
-                  >
-                    No, keep spot
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="px-3 py-1 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-500 transition"
-                  >
-                    Yes, cancel spot
-                  </button>
-                </div>
-              </div>
-            )}
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-300 hover:text-white bg-rose-950/40 hover:bg-rose-950/80 border border-rose-900/60 transition cursor-pointer"
+            >
+              {t('statusCancelBtn')}
+            </button>
           </div>
         )}
+
+        {/* Quick Link to Join Again if Cancelled or Done */}
+        {(isDone || isCancelled || isNoShow) && (
+          <Link
+            to="/join"
+            className="w-full py-3 px-4 rounded-xl text-xs font-bold text-center block bg-[#D4A017] hover:bg-[#B8860B] text-gray-950 transition shadow-gold-sm"
+          >
+            {t('statusBackToJoin')}
+          </Link>
+        )}
       </Card>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#243042] border border-gray-700 rounded-xl p-5 max-w-sm w-full shadow-2xl space-y-4 animate-scaleUp">
+            <div className="flex items-center gap-2.5 text-rose-400">
+              <ShieldAlert className="w-5 h-5 shrink-0" />
+              <h3 className="text-base font-bold text-white">
+                {t('statusCancelModalTitle')}
+              </h3>
+            </div>
+
+            <p className="text-xs text-gray-300 leading-relaxed">
+              {t('statusCancelModalDesc', { token: customer.id })}
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="px-3.5 py-2 rounded-lg text-xs font-medium text-gray-300 hover:bg-gray-700 transition cursor-pointer"
+              >
+                {t('statusKeepSpotBtn')}
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                className="px-4 py-2 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition shadow-sm cursor-pointer"
+              >
+                {t('statusConfirmCancelBtn')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

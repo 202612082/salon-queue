@@ -1,20 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useQueue } from '../context/QueueContext';
 import { Card, GoldBadge } from '../components/Card';
-import { Users, Clock, ArrowRight, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import {
+  Users,
+  Clock,
+  ArrowRight,
+  AlertCircle,
+  Sparkles,
+  CheckCircle2,
+  Ticket,
+} from 'lucide-react';
 
 export const HomeScreen = () => {
   const { t, lang } = useLanguage();
   const { queueState, estimateInitialWaitTime } = useQueue();
   const navigate = useNavigate();
 
-  const waitingCustomers = (queueState.queue || []).filter(c => c.status === 'Waiting');
+  const [activeTokenId, setActiveTokenId] = useState(null);
+
+  // Check if there is an active token stored in this browser
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('salon_active_token');
+      if (stored) {
+        const found = (queueState.queue || []).find((c) => c.id === stored);
+        if (found && ['Waiting', 'Called', 'In Chair'].includes(found.status)) {
+          setActiveTokenId(found.id);
+        } else {
+          setActiveTokenId(null);
+        }
+      } else {
+        setActiveTokenId(null);
+      }
+    } catch (e) {
+      setActiveTokenId(null);
+    }
+  }, [queueState.queue]);
+
+  const waitingCustomers = (queueState.queue || []).filter((c) => c.status === 'Waiting');
   const estWait = estimateInitialWaitTime();
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8">
+      {/* Active Token Returning User Banner */}
+      {activeTokenId && (
+        <div className="bg-gradient-to-r from-[#D4A017]/25 via-[#D4A017]/15 to-transparent border border-[#D4A017] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-gold-sm animate-pulse-gold">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#D4A017] text-gray-950 font-black text-sm flex items-center justify-center shrink-0">
+              <Ticket className="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <p className="font-bold text-sm text-white">
+                {t('homeActiveTokenBanner', { token: activeTokenId })}
+              </p>
+              <p className="text-xs text-gray-300">
+                Track your real-time turn and estimated arrival alert.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`/status/${activeTokenId}`)}
+            className="w-full sm:w-auto px-4 py-2 rounded-lg bg-[#D4A017] hover:bg-[#B8860B] text-gray-950 text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer"
+          >
+            <span>{t('homeTrackActiveTokenBtn')}</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4A017]/10 border border-[#D4A017]/30 text-[#D4A017] text-xs font-semibold mb-2">
