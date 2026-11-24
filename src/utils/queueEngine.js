@@ -418,6 +418,80 @@ export const callNextCustomer = (barberName) => {
 };
 
 /**
+ * Call a specific waiting customer to an available eligible barber
+ * If targetBarberName is given, verifies that barber is on duty and available.
+ * Otherwise, auto-assigns to the customer's preferred barber (if available) or first available barber (if 'Any').
+ */
+export const callSpecificCustomer = (tokenId, targetBarberName = null) => {
+  const state = getQueueState();
+  const customer = state.queue.find(c => c.id === tokenId);
+
+  if (!customer) throw new Error('CUSTOMER_NOT_FOUND');
+  if (customer.status !== 'Waiting') throw new Error('CUSTOMER_NOT_WAITING');
+
+  let assignedBarber = null;
+
+  if (targetBarberName) {
+    const b = state.barbers.find(barber => barber.name === targetBarberName);
+    if (!b || !b.onDuty || b.status !== 'Available') {
+      throw new Error('BARBER_NOT_AVAILABLE');
+    }
+    if (customer.preferredBarber !== 'Any' && customer.preferredBarber !== targetBarberName) {
+      throw new Error('BARBER_MISMATCH');
+    }
+    assignedBarber = b;
+  } else {
+    // Auto-pick available barber matching preference
+    if (customer.preferredBarber !== 'Any') {
+      const b = state.barbers.find(
+        barber => barber.name === customer.preferredBarber && barber.onDuty && barber.status === 'Available'
+      );
+      if (b) assignedBarber = b;
+    } else {
+      // Pick first available on-duty barber
+      const b = state.barbers.find(barber => barber.onDuty && barber.status === 'Available');
+      if (b) assignedBarber = b;
+    }
+  }
+
+  if (!assignedBarber) {
+    return null; // No available barber matching customer
+  }
+
+  const updatedQueue = state.queue.map(c => {
+    if (c.id === tokenId) {
+      return {
+        ...c,
+        status: 'Called',
+        assignedBarber: assignedBarber.name,
+        calledAt: Date.now(),
+      };
+    }
+    return c;
+  });
+
+  const updatedBarbers = state.barbers.map(b => {
+    if (b.name === assignedBarber.name) {
+      return {
+        ...b,
+        status: 'Busy',
+        currentTokenId: tokenId,
+      };
+    }
+    return b;
+  });
+
+  const updatedState = {
+    ...state,
+    queue: updatedQueue,
+    barbers: updatedBarbers,
+  };
+
+  saveQueueState(updatedState);
+  return { customer: { ...customer, status: 'Called', assignedBarber: assignedBarber.name }, barber: assignedBarber };
+};
+
+/**
  * Start service (Called -> In Chair)
  */
 export const startService = (tokenId) => {

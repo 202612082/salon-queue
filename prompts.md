@@ -11,3 +11,14 @@ Read docs/02-screens.md (Screens 1, 2, 3) and docs/03-flows-rules.md. Complete a
 
 
 OK, implement this plan for Screens 1, 2, and 3 only, run npm run build to verify, and stop after Step 2.
+
+
+## Step 3 — Reception & Barber Screens
+
+Read docs/02-screens.md (Screens 4 and 5) and docs/03-flows-rules.md. Complete and refine Screen 4 (/reception) and Screen 5 (/barber/:name) so all required behaviors work end-to-end:
+1. Screen 4 (/reception): Walk-in customer registration modal (same rules: 10-digit phone, duplicate active phone check, max 3 services, barber choice, sequential token), live barber station cards (Ravi, Amit, Imran) showing current customer/status and [ Call Next ] button (matching earliest Waiting customer for that barber or Any, and disabling [ Call Next ] while the barber is Busy or On Break), plus the waiting queue list with [ Call ] and [ Cancel ] actions.
+2. Screen 5 (/barber/:name): Barber switcher tabs (Ravi, Amit, Imran), station status & [ Take Break / End Break ] toggle, current customer card with [ Start Service ] (Called -> In Chair), [ Complete Service ] (In Chair -> Done, freeing the barber to Available), and [ Mark No-Show ] (Called -> No-Show, freeing the barber), plus an upcoming queue preview for that barber.
+Keep all labels in src/i18n/translations.js and do not touch Screens 1-3 or Screens 6-7. Show your plan first, then wait for my OK.
+
+
+OK, implement this plan for Screens 4 and 5 only, run npm run build to verify, and stop after Step 3.
