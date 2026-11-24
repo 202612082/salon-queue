@@ -32,3 +32,10 @@ Read docs/02-screens.md (Screens 6 and 7) and docs/03-flows-rules.md. Complete a
 Keep all labels in src/i18n/translations.js and do not break Screens 1-5. Show your plan first, then wait for my OK.
 
 OK, implement this plan for Screens 6 and 7 only, run npm run build to verify, and stop after Step 4.
+
+
+## Step 5 — README & Final Verification and save
+
+Read AGENTS.md, docs/01-brief.md, docs/02-screens.md, and docs/03-flows-rules.md. Create a clear, accurate README.md in the project root explaining the Salon Queue Management System, all 7 screens and their routes, the EN/GU bilingual support, the centralized queue engine & cross-tab localStorage sync, pre-seeded demo data (Ravi, Amit, Imran + 6 sample customers), and how to run/test the app locally. Also verify that npm run build still passes with zero errors and check that all 7 routes are wired properly in src/App.jsx. Show your plan first, then wait for my OK.
+
+OK, create README.md as planned and run npm run build to confirm everything passes cleanly.
