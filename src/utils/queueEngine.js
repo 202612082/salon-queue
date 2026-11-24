@@ -365,6 +365,7 @@ export const callNextCustomer = (barberName) => {
   const barber = state.barbers.find(b => b.name === barberName);
 
   if (!barber) throw new Error('BARBER_NOT_FOUND');
+  if (!barber.onDuty) throw new Error('BARBER_OFF_DUTY');
   if (barber.status === 'On Break') throw new Error('BARBER_ON_BREAK');
 
   // Single active turn per barber
@@ -706,6 +707,90 @@ export const toggleQueueOpen = (isOpen) => {
   const updatedState = { ...state, isOpen: nextOpen };
   saveQueueState(updatedState);
   return nextOpen;
+};
+
+/**
+ * Add a new service to the menu
+ */
+export const addService = ({ nameEn, nameGu, duration, price }) => {
+  const state = getQueueState();
+  const newId = `s_${Date.now()}`;
+  const newService = {
+    id: newId,
+    nameEn: (nameEn || '').trim(),
+    nameGu: (nameGu || '').trim() || (nameEn || '').trim(),
+    duration: Number(duration) || 15,
+    price: Number(price) || 100,
+  };
+
+  const updatedState = {
+    ...state,
+    services: [...(state.services || []), newService],
+  };
+
+  saveQueueState(updatedState);
+  return newService;
+};
+
+/**
+ * Update an existing service
+ */
+export const updateService = (serviceId, { nameEn, nameGu, duration, price }) => {
+  const state = getQueueState();
+  const updatedServices = (state.services || []).map(s => {
+    if (s.id === serviceId) {
+      return {
+        ...s,
+        nameEn: (nameEn || '').trim() || s.nameEn,
+        nameGu: (nameGu || '').trim() || s.nameGu,
+        duration: Number(duration) || s.duration,
+        price: Number(price) || s.price,
+      };
+    }
+    return s;
+  });
+
+  const updatedState = {
+    ...state,
+    services: updatedServices,
+  };
+
+  saveQueueState(updatedState);
+  return true;
+};
+
+/**
+ * Delete a service from the menu (safeguards minimum 1 service)
+ */
+export const deleteService = (serviceId) => {
+  const state = getQueueState();
+  if ((state.services || []).length <= 1) {
+    throw new Error('MIN_ONE_SERVICE_REQUIRED');
+  }
+
+  const updatedServices = (state.services || []).filter(s => s.id !== serviceId);
+  const updatedState = {
+    ...state,
+    services: updatedServices,
+  };
+
+  saveQueueState(updatedState);
+  return true;
+};
+
+/**
+ * Calculate dynamic average wait time in minutes
+ */
+export const calculateAverageWaitTime = (state) => {
+  const served = (state.queue || []).filter(c => c.status === 'Done' || c.status === 'In Chair');
+  if (served.length > 0) {
+    const totalMins = served.reduce((acc, c) => {
+      const waitMs = (c.startedAt || c.calledAt || c.completedAt || Date.now()) - c.enteredAt;
+      return acc + Math.max(5, Math.round(waitMs / 60000));
+    }, 0);
+    return Math.max(5, Math.round(totalMins / served.length));
+  }
+  return 15;
 };
 
 /**
