@@ -1,6 +1,9 @@
 # Royal Salon — Queue Management System
 ### રોયલ સલૂન — ડિજિટલ કતાર મેનેજમેન્ટ સિસ્ટમ
 
+**Live demo:** https://salon-queue-two.vercel.app
+**Hosted on:** Vercel (frontend)
+
 A web-based Salon Queue Management System built with **React**, **Vite**, **Tailwind CSS**, and **React Router**. Features mobile customer screens, a reception management dashboard, a barber station view, a high-contrast TV waiting room display, and a salon owner administration panel with complete **English** and **Gujarati** bilingual support.
 
 ---
